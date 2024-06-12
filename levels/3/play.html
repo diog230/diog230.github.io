@@ -1,0 +1,246 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Alphabet Soup Game - Level 2</title>
+    <style>
+        @font-face {
+            font-family: 'Blackwax';
+            src: url('/assets/fonts/blackwax.otf') format('opentype');
+        }
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        html, body {
+            height: 100%;
+            font-family: 'Blackwax', sans-serif;
+        }
+        body {
+            background: url('/assets/img/bkg.jpg') no-repeat center center fixed;
+            background-size: cover;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            flex-direction: column;
+        }
+        .container {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+        .author {
+            width: 50%;
+            max-width: 400px;
+            height: auto;
+        }
+        .book {
+            width: 70%;
+            max-width: 500px;
+            height: auto;
+            margin-top: 20px;
+        }
+        .play-button {
+            margin-top: 20px;
+            padding: 10px 20px;
+            font-size: 1.5rem;
+            color: white;
+            background-color: rgba(0, 0, 0, 0.7);
+            border: none;
+            cursor: pointer;
+            border-radius: 5px;
+            transition: background-color 0.3s;
+        }
+        .play-button:hover {
+            background-color: rgba(0, 0, 0, 0.9);
+        }
+        .game-board {
+            display: grid;
+            gap: 2px;
+            margin-top: 20px;
+        }
+        .game-board .cell {
+            width: 30px;
+            height: 30px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            background-color: rgba(255, 255, 255, 0.8);
+            cursor: pointer;
+        }
+        .game-board .cell.highlight {
+            background-color: yellow;
+        }
+        @media (max-width: 600px) {
+            .game-board .cell {
+                width: 25px;
+                height: 25px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <img src="/assets/author.png" alt="Author" class="author">
+        <img src="/assets/img/book.png" alt="Book" class="book">
+        <button class="play-button" onclick="startGame()">Play Level 2</button>
+        <div id="game" class="game-board"></div>
+    </div>
+    <script>
+        const words = ["HTML", "CSS", "JAVASCRIPT", "RESPONSIVE", "GAME"];
+        const gridSize = 10;
+
+        function generateGrid() {
+            let grid = Array.from({ length: gridSize }, () => Array(gridSize).fill(''));
+            words.forEach(word => placeWordInGrid(word, grid));
+            fillEmptySpaces(grid);
+            return grid;
+        }
+
+        function placeWordInGrid(word, grid) {
+            const directions = [
+                { x: 1, y: 0 }, { x: 0, y: 1 }, { x: 1, y: 1 },
+                { x: -1, y: 0 }, { x: 0, y: -1 }, { x: -1, y: -1 }
+            ];
+            let placed = false;
+
+            while (!placed) {
+                const dir = directions[Math.floor(Math.random() * directions.length)];
+                const startX = Math.floor(Math.random() * gridSize);
+                const startY = Math.floor(Math.random() * gridSize);
+                if (canPlaceWord(word, grid, startX, startY, dir)) {
+                    for (let i = 0; i < word.length; i++) {
+                        grid[startY + dir.y * i][startX + dir.x * i] = word[i];
+                    }
+                    placed = true;
+                }
+            }
+        }
+
+        function canPlaceWord(word, grid, x, y, dir) {
+            for (let i = 0; i < word.length; i++) {
+                const newX = x + dir.x * i;
+                const newY = y + dir.y * i;
+                if (
+                    newX < 0 || newY < 0 || newX >= gridSize || newY >= gridSize ||
+                    (grid[newY][newX] && grid[newY][newX] !== word[i])
+                ) {
+                    return false;
+                }
+            }
+            return true;
+        }
+
+        function fillEmptySpaces(grid) {
+            const letters = "ABCDEFGHIJKLMNOPQRSTUVWXYZ";
+            for (let y = 0; y < gridSize; y++) {
+                for (let x = 0; x < gridSize; x++) {
+                    if (!grid[y][x]) {
+                        grid[y][x] = letters[Math.floor(Math.random() * letters.length)];
+                    }
+                }
+            }
+        }
+
+        function renderGrid(grid) {
+            const gameBoard = document.getElementById('game');
+            gameBoard.style.gridTemplateColumns = `repeat(${gridSize}, 1fr)`;
+            gameBoard.innerHTML = '';
+            grid.forEach((row, y) => {
+                row.forEach((letter, x) => {
+                    const cell = document.createElement('div');
+                    cell.classList.add('cell');
+                    cell.dataset.x = x;
+                    cell.dataset.y = y;
+                    cell.textContent = letter;
+                    cell.addEventListener('click', () => selectCell(cell, grid));
+                    gameBoard.appendChild(cell);
+                });
+            });
+        }
+
+        function selectCell(cell, grid) {
+            cell.classList.toggle('highlight');
+            checkWords(grid);
+        }
+
+        function checkWords(grid) {
+            const highlightedCells = document.querySelectorAll('.cell.highlight');
+            const highlightedWords = Array.from(highlightedCells).map(cell => ({
+                x: parseInt(cell.dataset.x, 10),
+                y: parseInt(cell.dataset.y, 10)
+            }));
+            words.forEach(word => {
+                if (isWordHighlighted(word, grid, highlightedWords)) {
+                    highlightWord(word, grid);
+                }
+            });
+        }
+
+        function isWordHighlighted(word, grid, highlightedWords) {
+            const directions = [
+                { x: 1, y: 0 }, { x: 0, y: 1 }, { x: 1, y: 1 },
+                { x: -1, y: 0 }, { x: 0, y: -1 }, { x: -1, y: -1 }
+            ];
+            return directions.some(dir => {
+                return highlightedWords.some(start => {
+                    return word.split('').every((letter, index) => {
+                        const newX = start.x + dir.x * index;
+                        const newY = start.y + dir.y * index;
+                        return (
+                            newX >= 0 && newY >= 0 && newX < gridSize && newY < gridSize &&
+                            grid[newY][newX] === letter &&
+                            highlightedWords.some(cell => cell.x === newX && cell.y === newY)
+                        );
+                    });
+                });
+            });
+        }
+
+        function highlightWord(word, grid) {
+            const directions = [
+                { x: 1, y: 0 }, { x: 0, y: 1 }, { x: 1, y: 1 },
+                { x: -1, y: 0 }, { x: 0, y: -1 }, { x: -1, y: -1 }
+            ];
+            directions.forEach(dir => {
+                const start = findWordStart(word, grid, dir);
+                if (start) {
+                    for (let i = 0; i < word.length; i++) {
+                        const newX = start.x + dir.x * i;
+                        const newY = start.y + dir.y * i;
+                        const cell = document.querySelector(`.cell[data-x='${newX}'][data-y='${newY}']`);
+                        if (cell) {
+                            cell.classList.add('highlight');
+                        }
+                    }
+                }
+            });
+        }
+
+        function findWordStart(word, grid, dir) {
+            for (let y = 0; y < gridSize; y++) {
+                for (let x = 0; x < gridSize; x++) {
+                    if (word.split('').every((letter, index) => {
+                        const newX = x + dir.x * index;
+                        const newY = y + dir.y * index;
+                        return (
+                            newX >= 0 && newY >= 0 && newX < gridSize && newY < gridSize &&
+                            grid[newY][newX] === letter
+                        );
+                    })) {
+                        return { x, y };
+                    }
+                }
+            }
+            return null;
+        }
+
+        function startGame() {
+            const grid = generateGrid();
+            renderGrid(grid);
+        }
+    </script>
+</body>
+</html>
